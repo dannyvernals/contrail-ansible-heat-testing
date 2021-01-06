@@ -1,0 +1,123 @@
+---
+# Test that Contrail API is working and correct objects exist from the instantiated 
+# heat stacks.
+# JSON data for the objects can be read with e.g. 'jq . ./output/vn_kernel'
+#
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/auth_module.html
+
+- name: "Test Contrail API"
+  hosts: localhost
+  vars:
+    results_dir: "{{ script_dir }}/output"
+  tasks:
+    - name: Authenticate to OpenStack
+      openstack.cloud.auth:
+      register: os_auth_results
+    - name: Base API check
+      uri:
+        url: "{{ api_url }}"
+    - name: Get Kernel VN UUID
+      uri:
+        url: "{{ api_url }}/fqname-to-id"
+        method: POST
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+        body_format: json
+        body: "{\"fq_name\": [\"{{ domain }}\", \"{{ project }}\", \"natp-kernel-net\"], \"type\": \"virtual-network\"}"
+      register: vn_kernel_uuid
+    - name: Get Kernel VN
+      uri:
+        url: "{{ api_url }}/virtual-network/{{vn_kernel_uuid.json.uuid}}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      register: vn_kernel_json
+    - local_action: copy content={{ vn_kernel_json.json }} dest="{{results_dir}}/vn_kernel"
+    - name: Get Kernel VM
+      uri:
+        url: "{{ vn_kernel_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][0][\"href\"] }}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      register: vm_kernel_json
+    - local_action: copy content={{ vm_kernel_json.json }} dest="{{results_dir}}/vm_kernel"
+    - name: Get DPDK VN UUID
+      uri:
+        url: "{{ api_url }}/fqname-to-id"
+        method: POST
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+        body_format: json
+        body: "{\"fq_name\": [\"{{ domain }}\", \"{{ project }}\", \"natp-dpdk-net\"], \"type\": \"virtual-network\"}"
+      register: vn_dpdk_uuid
+    - name: Get Kernel VN
+      uri:
+        url: "{{ api_url }}/virtual-network/{{vn_dpdk_uuid.json.uuid}}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      register: vn_dpdk_json
+    - local_action: copy content={{ vn_dpdk_json.json }} dest="{{results_dir}}/vn_dpdk"
+    - name: Get DPDK VM
+      uri:
+        url: "{{ vn_dpdk_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][0][\"href\"] }}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      register: vm_dpdk_json
+    - local_action: copy content={{ vm_dpdk_json.json }} dest="{{results_dir}}/vm_dpdk"
+    - name: Get Network Policy UUID
+      uri:
+        url: "{{ api_url }}/fqname-to-id"
+        method: POST
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+        body_format: json
+        body: "{\"fq_name\":[\"{{ domain }}\", \"{{ project }}\", \"natp-test-policy\"], \"type\": \"network-policy\"}"
+      register: network_policy_uuid
+    - name: Get Network Policy
+      uri:
+        url: "{{ api_url }}/network-policy/{{network_policy_uuid.json.uuid}}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      register: network_policy_json
+    - local_action: copy content={{ network_policy_json.json }} dest="{{results_dir}}/network_policy"
+    - name: Get Security Group UUID
+      uri:
+        url: "{{ api_url }}/fqname-to-id"
+        method: POST
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+        body_format: json  
+        body: "{\"fq_name\": [\"{{ domain }}\", \"{{ project }}\", \"natp-test-sec-group\"], \"type\": \"security-group\"}"
+      register: security_group_uuid
+    - name: Get Security Group
+      uri:
+        url: "{{ api_url }}/security-group/{{security_group_uuid.json.uuid}}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      register: security_group_json
+    - local_action: copy content={{ security_group_json.json }} dest="{{results_dir}}/security_group"

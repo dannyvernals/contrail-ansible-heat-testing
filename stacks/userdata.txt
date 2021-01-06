@@ -1,0 +1,13 @@
+#cloud-config
+password: mypasswd
+chpasswd: { expire: False }
+ssh_pwauth: True
+manage_resolv_conf: true
+users:
+  - name: ubuntu
+    ssh-authorized-keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC6Vb9cZJFnspFAraRTtH/92O4xOefyDjURXcMgPKfuKXefeXfLMlhB+jC3TcPHoi1Fe+jvvfI5xm0W/oXO+ny1qTOyjrpy0mLF3inbhjhPmxwZY9dZAK0enCaImffGt6QUhlh4I87ceMs33SmiQrrVnpD+MIFz2+apdNmMRiGVhP+FQ/fojwlyS1x5VcnuDF5Xp4USaM7xFgd6ZPJ8CuaeBEUkZ1e5BU4Njw8zELY3+Fr4AYdf2bgOQgMzddR8G/GKX82zmCLMfUa5aV64TQJ3IUseYfWTHfMVGNL39I6Fy5KakYFxe0AHg3Kx5RM/pRgogpSpn2GBaYCekP/PEwhX danny@vernals.co.uk
+resolv_conf:
+  nameservers: ['8.8.4.4', '8.8.8.8']
+#runcmd:
+#  - ip route delete default via 192.168.2.1 

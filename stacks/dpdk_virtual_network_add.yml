@@ -1,0 +1,60 @@
+heat_template_version: queens
+parameters:
+  fq_string:
+    type: string
+    default: "admin_domain:admin:"
+
+  vn_name: 
+    type: string
+    default: "natp-dpdk-net"
+
+  prefix: 
+    type: string
+    default: '10.10.1.0'
+
+  mask: 
+    type: string 
+    default: '24'
+
+  default_ipam: 
+    type: string 
+    default: 'default-domain:default-project:default-network-ipam'
+
+  vn_ipam:
+    type: string
+    default: "natp-test-ipam"
+
+  policy:
+    type: string
+    default: "natp-test-policy"
+
+resources:
+        
+  dpdk_vn:
+    type: OS::ContrailV2::VirtualNetwork
+    properties:
+      name: { get_param: vn_name}    
+      network_ipam_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vn_ipam}]]}]
+      network_ipam_refs_data:
+        [{
+          network_ipam_refs_data_ipam_subnets:
+            [{
+              network_ipam_refs_data_ipam_subnets_addr_from_start: "true",
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { get_param: prefix },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { get_param: mask },
+                }
+         }]
+        }]
+
+
+      network_policy_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: policy}]]}]
+      network_policy_refs_data:
+        [{
+          network_policy_refs_data_sequence:
+            {
+              network_policy_refs_data_sequence_major: 0,
+              network_policy_refs_data_sequence_minor: 0,
+            },
+        }] 

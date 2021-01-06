@@ -1,0 +1,57 @@
+heat_template_version: queens
+parameters:
+
+  vn_name: 
+    type: string
+    default: "natp-management-net"
+  prefix: 
+    type: string
+    default: '172.16.100.0'
+  mask: 
+    type: string 
+    default: '24'
+  policy:
+    type: string
+    default: "management-policy"
+  fq_string:
+    type: string
+    default: "admin_domain:admin"
+
+
+resources:
+  man_ipam:
+    type: OS::ContrailV2::NetworkIpam
+    properties:
+      name: natp-management-ipam        
+  man_vn:
+    type: OS::ContrailV2::VirtualNetwork
+    properties:
+      name: { get_param: vn_name}    
+      network_ipam_refs: [{ get_resource: man_ipam }]      
+      network_ipam_refs_data:
+        [{
+          network_ipam_refs_data_ipam_subnets:
+            [{
+              network_ipam_refs_data_ipam_subnets_addr_from_start: "true",
+              network_ipam_refs_data_ipam_subnets_default_gateway: "0.0.0.0",
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { get_param: prefix },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { get_param: mask },
+                }
+         }]
+        }]
+
+      
+      #network_policy_refs: [{ get_param: policy }]
+      #network_policy_refs_data:
+      #  [{
+      #    network_policy_refs_data_sequence:
+      #      {
+      #        network_policy_refs_data_sequence_major: 0,
+      #        network_policy_refs_data_sequence_minor: 0,
+      #      },
+      #  }]
+
+      
+  

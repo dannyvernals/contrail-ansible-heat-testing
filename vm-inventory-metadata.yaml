@@ -1,0 +1,18 @@
+VMS:
+  hosts:
+    "b26nc01node011.002.ncitest.bt.com":
+      vms:
+        - name: kernel_vm
+          vrouter: 10.10.0.1
+          remote_ip: 10.10.1.3
+    "b26nc01node010.002.ncitest.bt.com":
+      vms:
+        - name: sriov_vm
+          vrouter: 192.168.112.1
+          remote_ip: 192.168.112.2
+    "b26nc01node013.002.ncitest.bt.com":
+      vms:
+        - name: dpdk_vm
+          vrouter: 10.10.1.1
+          remote_ip: 10.10.0.3
+

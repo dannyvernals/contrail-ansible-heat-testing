@@ -1,0 +1,99 @@
+heat_template_version: queens
+
+parameters:
+  fq_string:
+    type: string
+    default: "admin_domain:admin"
+  az: 
+    type: string
+    default: "az-1:ltnnc01node014"
+  management_vn_name:
+    type: string
+    default: "natp-management-net"
+  vn_name:
+    type: string
+    default: "natp-physnet_1_network"
+  sec_group:
+    type: string
+    default: "natp-test-sec-group"
+  image_name:
+    type: string
+    default: "natp-ubuntu"
+  cloud_init_string:
+    type: string
+    default: |
+        #cloud-config
+        chpasswd:
+          list: |
+            ubuntu:mypasswd
+          expire: False
+        ssh_pwauth: True
+        users:
+          - name: 'ubuntu'
+            ssh-authorized-keys:
+              - '
+
+  ssh_pub_key:
+    type: string
+
+resources:
+  cloud_init:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:  {list_join: [' ', [ {get_param: cloud_init_string}, {get_param: ssh_pub_key}, "'"]]}
+
+  #Create port to connect to VM
+  physnet_1_vmi:
+    type: OS::ContrailV2::VirtualMachineInterface
+    properties:
+      name: physnet_1_vmi
+      virtual_network_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vn_name}]]}]
+      virtual_machine_interface_bindings:
+        virtual_machine_interface_bindings_key_value_pair:
+          [
+            {
+              virtual_machine_interface_bindings_key_value_pair_key: vnic_type,
+              virtual_machine_interface_bindings_key_value_pair_value: direct,
+            },
+          ]
+  #InstanceIP        
+  physnet_1_ip:
+    type: OS::ContrailV2::InstanceIp
+    depends_on: [physnet_1_vmi]
+    properties:
+      name: physnet_1_ip
+      virtual_machine_interface_refs: [{ get_resource: physnet_1_vmi }]
+      virtual_network_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vn_name}]]}]
+      instance_ip_address: 192.168.112.250
+
+  vmi_management_instance:
+    type: OS::ContrailV2::VirtualMachineInterface
+    properties:
+      virtual_network_refs:  [{list_join: [':', [ {get_param: fq_string}, {get_param: management_vn_name}]]}]
+      port_security_enabled: true
+      security_group_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: sec_group}]]}]
+
+  vmi_management_ip:
+    type: OS::ContrailV2::InstanceIp
+    depends_on: [ vmi_management_instance ]
+    properties:
+      virtual_machine_interface_refs: [{ get_resource: vmi_management_instance }]
+      virtual_network_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: management_vn_name}]]}]
+      
+  #Create VM
+  physnet_1_vm:
+    type: OS::Nova::Server
+    depends_on: [physnet_1_vmi, vmi_management_ip]
+    properties:
+      name: natp-sriov-vn-vm1 
+      image: { get_param: image_name }
+      flavor: natp.xp.m1.small 
+      #availability_zone: { get_param: host }
+      availability_zone: { get_param: az }
+      networks:
+        - port: { get_resource: physnet_1_vmi }
+        - port: { get_resource: vmi_management_instance }
+      user_data_format: RAW
+      config_drive: true
+      user_data:  { get_resource: cloud_init } 

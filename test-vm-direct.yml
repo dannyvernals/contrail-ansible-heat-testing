@@ -1,0 +1,12 @@
+---
+- name: Test VM Connectivity via Management IPs
+  hosts: VMS
+  tasks:
+    - name: Ping vrouter 
+      shell: ping -c 10 {{ vrouter }} -i 0.2 -q 
+      register: ping_results
+    - local_action: copy content={{ ping_results.stdout }} dest="{{results_dir}}/{{ inventory_hostname }}_vrouter_ping"
+    - name: Ping other VM 
+      shell: ping -c 10 {{ remote_ip }} -i 0.2 -q 
+      register: ping_results
+    - local_action: copy content={{ ping_results.stdout }} dest="{{results_dir}}/{{ inventory_hostname }}_vm_ping"

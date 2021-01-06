@@ -1,0 +1,34 @@
+---
+- name: Get Contrail Interface XML Data
+  delegate_to: localhost
+  uri:
+          #url: "https://{{ inventory_hostname }}:8085/Snh_ItfReq?vn={{ vm.vn_fq }}"
+    url: "https://{{ inventory_hostname }}:8085/Snh_ItfReq?vn={{ domain }}:{{ project }}:{{ management_net }}"
+    client_cert: "{{ introspect_cert }}"
+    client_key: "{{ introspect_key }}"
+    validate_certs: no
+    method: GET
+    return_content: yes
+    headers:
+      Content-Type: "application/xml; charset=UTF-8"
+  register: interface_xml
+- name: Get VM Metadata IP from XML
+  delegate_to: localhost
+  xml:
+    xmlstring: "{{ interface_xml.content }}"
+    xpath: "//mdata_ip_addr"
+    content: text
+  register: xmlresp
+- name: Clear old SSH fingerprint
+  ignore_errors: True
+  shell: "ssh-keygen -f {{ ssh_remote_dir }}/.ssh/known_hosts -R {{ xmlresp.matches[0].mdata_ip_addr }}"
+- name: "{{ vm.name }}: Ping vrouter" 
+  shell: "ssh {{ xmlresp.matches[0].mdata_ip_addr }} -i {{ ssh_remote_dir }}/vm-key -oStrictHostKeyChecking=no 'ping -c 10 {{ vm.vrouter }} -i 0.2 -q'" 
+  register: ping_results
+- local_action: "copy content={{ ping_results.stdout }} dest={{results_dir}}/{{ inventory_hostname }}_vrouter_{{ vm.name }}_ping"
+- name: "{{ vm.name }}: Ping other VM" 
+  shell: "ssh {{ xmlresp.matches[0].mdata_ip_addr }} -i {{ ssh_remote_dir }}/vm-key -oStrictHostKeyChecking=no 'ping -c 10 {{ vm.remote_ip }} -i 0.2 -q'"
+  register: ping_results
+- local_action: copy content={{ ping_results.stdout }} dest="{{results_dir}}/{{ inventory_hostname }}_vm_{{ vm.name }}_ping"
+
+
