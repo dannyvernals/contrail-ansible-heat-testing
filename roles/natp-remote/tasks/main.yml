@@ -1,0 +1,19 @@
+---
+# tasks file for roles/natp-remote
+- include_tasks: configure_ssh.yml
+  name: Include configure_ssh.yml
+- include_tasks: test-connectivity.yml
+  name: Include test-connectivity.yml
+  when: 
+    remote_mode == 'ping'
+- include_tasks: shutdown-contrail.yml
+  name: Include shutdown-contrail.yml
+  when: 
+    remote_mode == 'shutdown-contrail'
+- include_tasks: restore-contrail.yml
+  name: Include restore-contrail.yml
+  when: 
+    remote_mode == 'restore-contrail'
+ 
+
+ 

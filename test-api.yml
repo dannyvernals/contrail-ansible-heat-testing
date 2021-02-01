@@ -1,0 +1,10 @@
+---
+- name: Instantiate Contrail API 
+  hosts: localhost
+  gather_facts: no
+  environment: "{{ remote_env }}"
+  vars:
+    results_dir: "{{ playbook_dir }}/output"
+    local_mode: "test_api"
+  roles:
+    - natp-localhost

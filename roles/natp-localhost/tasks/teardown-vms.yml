@@ -1,0 +1,18 @@
+---
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/stack_module.html
+# Also needs to be using a python interpreter that has openstacksdk library
+#
+    - name: "Delete Kernel VMs"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VMs"
+        state: absent
+    - name: "Delete DPDK VMs"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VMs"
+        state: absent
+    - name: "Delete SRIOV VMs"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VMs"
+        state: absent
+

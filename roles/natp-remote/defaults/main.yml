@@ -1,0 +1,19 @@
+## Automatic (populated from environment variables)
+domain: "{{ lookup('env','OS_PROJECT_DOMAIN_NAME') }}" 
+project:  "{{ lookup('env','OS_PROJECT_NAME') }}"
+## Manual (will need to change some values for each DC)
+
+ansible_python_interpreter: "venvs/openstack/bin/python"
+domain_suffix: ""
+dpdk_nodes: [""]
+kernel_nodes: [""]
+sriov_nodes: [""]
+
+## VM Testing playbooks
+ssh_id_location: "vm-key.pub"
+ssh_private_key_location: "vm-key"
+ssh_remote_dir: "/home/ubuntu"
+introspect_cert: "i.pem"
+introspect_key: "i.key"
+vm_image: "Bionic_Ubuntu"   
+

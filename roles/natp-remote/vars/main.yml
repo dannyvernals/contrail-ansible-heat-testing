@@ -1,0 +1,4 @@
+## Automatic (populated from environment variables)
+domain: "{{ lookup('env','OS_PROJECT_DOMAIN_NAME') }}" 
+project:  "{{ lookup('env','OS_PROJECT_NAME') }}"
+

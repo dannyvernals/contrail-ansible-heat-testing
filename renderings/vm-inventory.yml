@@ -1,0 +1,9 @@
+all:
+  children:
+    LOCAL:
+      hosts:
+        localhost:
+    CONTRAIL_HOST:
+      hosts:
+        1.1.1.1:
+

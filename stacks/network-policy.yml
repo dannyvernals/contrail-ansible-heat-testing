@@ -20,7 +20,15 @@ parameters:
       type: string
       default: "<>"
       description: Direction to apply policy
-
+   sriov_prefix:
+      type: string
+      default: "192.168.1.0"
+      description: SRIOV network (to allow inter-network routing)
+   sriov_prefix_length:
+      type: string
+      default: "24"
+      description: SRIOV prefix length
+   
 resources:
 
    policy_web_db:
@@ -39,6 +47,60 @@ resources:
                       network_policy_entries_policy_rule_src_addresses:
                     [{
                       network_policy_entries_policy_rule_src_addresses_virtual_network: {list_join: [':', [ {get_param: fq_string}, {get_param: vn_2_fq_name}]]},
+                    }],
+                  network_policy_entries_policy_rule_src_ports:
+                    [{
+                      network_policy_entries_policy_rule_src_ports_start_port: "1",
+                      network_policy_entries_policy_rule_src_ports_end_port: "255"
+                    }],
+                  network_policy_entries_policy_rule_dst_ports:
+                    [{
+                      network_policy_entries_policy_rule_dst_ports_start_port: "1",
+                      network_policy_entries_policy_rule_dst_ports_end_port: "255"
+                    }],
+                  network_policy_entries_policy_rule_action_list: { network_policy_entries_policy_rule_action_list_simple_action: "pass" },
+               },
+               {
+                  network_policy_entries_policy_rule_direction: { get_param: policy_direction },
+                  network_policy_entries_policy_rule_protocol: "icmp",
+                  network_policy_entries_policy_rule_dst_addresses:
+                    [{
+                      network_policy_entries_policy_rule_dst_addresses_subnet:
+                        {
+                        network_policy_entries_policy_rule_dst_addresses_subnet_ip_prefix: {get_param: sriov_prefix},
+                        network_policy_entries_policy_rule_dst_addresses_subnet_ip_prefix_len: {get_param: sriov_prefix_length}
+                        },
+                    }],
+                      network_policy_entries_policy_rule_src_addresses:
+                    [{
+                      network_policy_entries_policy_rule_src_addresses_virtual_network: {list_join: [':', [ {get_param: fq_string}, {get_param: vn_2_fq_name}]]},
+                    }],
+                  network_policy_entries_policy_rule_src_ports:
+                    [{
+                      network_policy_entries_policy_rule_src_ports_start_port: "1",
+                      network_policy_entries_policy_rule_src_ports_end_port: "255"
+                    }],
+                  network_policy_entries_policy_rule_dst_ports:
+                    [{
+                      network_policy_entries_policy_rule_dst_ports_start_port: "1",
+                      network_policy_entries_policy_rule_dst_ports_end_port: "255"
+                    }],
+                  network_policy_entries_policy_rule_action_list: { network_policy_entries_policy_rule_action_list_simple_action: "pass" },
+               },
+               {
+                  network_policy_entries_policy_rule_direction: { get_param: policy_direction },
+                  network_policy_entries_policy_rule_protocol: "icmp",
+                  network_policy_entries_policy_rule_dst_addresses:
+                    [{
+                      network_policy_entries_policy_rule_dst_addresses_subnet:
+                        {
+                        network_policy_entries_policy_rule_dst_addresses_subnet_ip_prefix: {get_param: sriov_prefix},
+                        network_policy_entries_policy_rule_dst_addresses_subnet_ip_prefix_len: {get_param: sriov_prefix_length}
+                        },
+                    }],
+                      network_policy_entries_policy_rule_src_addresses:
+                    [{
+                      network_policy_entries_policy_rule_src_addresses_virtual_network: {list_join: [':', [ {get_param: fq_string}, {get_param: vn_1_fq_name}]]},
                     }],
                   network_policy_entries_policy_rule_src_ports:
                     [{

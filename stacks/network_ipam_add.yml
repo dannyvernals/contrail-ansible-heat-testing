@@ -2,17 +2,21 @@ heat_template_version: queens
 parameters:
   vdns: 
     type: string
-    default: "default-domain:natp-test-vdns"
+    default: "natp-test-vdns"
+  fq_string:
+    type: string
+    description: fq_string for the VDNS
+    default: "admin_domain:admin"
 resources:
   test_ipam:
     type: OS::ContrailV2::NetworkIpam
     properties:
       name: natp-test-ipam
-      virtual_DNS_refs: [ {get_param: vdns} ]
+      virtual_DNS_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vdns}]]} ]
       network_ipam_mgmt:
           network_ipam_mgmt_ipam_dns_method: "virtual-dns-server"
           network_ipam_mgmt_ipam_dns_server:
-              network_ipam_mgmt_ipam_dns_server_virtual_dns_server_name: "default-domain:natp-test-vdns" 
+              network_ipam_mgmt_ipam_dns_server_virtual_dns_server_name: {list_join: [':', [ {get_param: fq_string}, {get_param: vdns}]]} 
           network_ipam_mgmt_dhcp_option_list:
               network_ipam_mgmt_dhcp_option_list_dhcp_option:
                       - { network_ipam_mgmt_dhcp_option_list_dhcp_option_dhcp_option_name:  "26",

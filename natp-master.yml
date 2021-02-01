@@ -1,0 +1,10 @@
+---
+- name: Load Instantiate Stacks playbook
+  import_playbook: instantiate-natp-stacks.yml
+- name: Load Test API playbook
+  import_playbook: test-api.yml
+- name: Load Ping Testing playbook
+  import_playbook: test-vm-connectivity.yml
+- name: Load  Stacks teardown playbook
+  import_playbook: teardown-natp-stacks.yml
+

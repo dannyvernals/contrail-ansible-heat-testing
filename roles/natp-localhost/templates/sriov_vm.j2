@@ -1,3 +1,5 @@
+#jinja2:variable_start_string:'@@', variable_end_string:'@@', block_start_string:'<%', block_end_string:'%>'
+
 heat_template_version: queens
 
 parameters:
@@ -52,12 +54,11 @@ resources:
     properties:
       group: ungrouped
       config:  {list_join: [' ', [ {get_param: cloud_init_string}, {get_param: ssh_pub_key}, "'"]]}
-
-  #Create port to connect to VM
-  physnet_1_vmi:
+<% for server in sriov_nodes %>
+  physnet_1_vmi_@@ loop.index @@:
     type: OS::ContrailV2::VirtualMachineInterface
     properties:
-      name: physnet_1_vmi
+      name: physnet_1_vmi_@@ loop.index @@
       virtual_network_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vn_name}]]}]
       virtual_machine_interface_bindings:
         virtual_machine_interface_bindings_key_value_pair:
@@ -68,42 +69,42 @@ resources:
             },
           ]
   #InstanceIP        
-  physnet_1_ip:
+  physnet_1_ip_@@ loop.index @@:
     type: OS::ContrailV2::InstanceIp
-    depends_on: [physnet_1_vmi]
+    depends_on: [physnet_1_vmi_@@ loop.index @@]
     properties:
-      name: physnet_1_ip
-      virtual_machine_interface_refs: [{ get_resource: physnet_1_vmi }]
+      name: physnet_1_ip_@@ loop.index @@
+      virtual_machine_interface_refs: [{ get_resource: physnet_1_vmi_@@ loop.index @@ }]
       virtual_network_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vn_name}]]}]
-      instance_ip_address:  {get_param: vm_ip} 
+      instance_ip_address:  @@ sriov_ip_start | ipaddr('address') | ipmath(loop.index - 1) @@
 
-  vmi_management_instance:
+  vmi_management_instance_@@ loop.index @@:
     type: OS::ContrailV2::VirtualMachineInterface
     properties:
       virtual_network_refs:  [{list_join: [':', [ {get_param: fq_string}, {get_param: management_vn_name}]]}]
       port_security_enabled: true
       security_group_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: sec_group}]]}]
 
-  vmi_management_ip:
+  vmi_management_ip_@@ loop.index @@:
     type: OS::ContrailV2::InstanceIp
-    depends_on: [ vmi_management_instance ]
+    depends_on: [ vmi_management_instance_@@ loop.index @@ ]
     properties:
-      virtual_machine_interface_refs: [{ get_resource: vmi_management_instance }]
+      virtual_machine_interface_refs: [{ get_resource: vmi_management_instance_@@ loop.index @@ }]
       virtual_network_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: management_vn_name}]]}]
       
   #Create VM
-  physnet_1_vm:
+  physnet_1_vm_@@ loop.index @@:
     type: OS::Nova::Server
-    depends_on: [physnet_1_vmi, vmi_management_ip]
+    depends_on: [physnet_1_vmi_@@ loop.index @@, vmi_management_ip_@@ loop.index @@]
     properties:
-      name: {list_join: ['-', [{ get_param: instance_name }, { get_param: vm_index }]]} 
+      name: {list_join: ['-', [{ get_param: instance_name }, '@@ loop.index @@']]} 
       image: { get_param: image_name }
       flavor: natp.xp.m1.small 
-      #availability_zone: { get_param: host }
-      availability_zone: { get_param: az }
+      availability_zone: "nova:@@ server @@" 
       networks:
-        - port: { get_resource: physnet_1_vmi }
-        - port: { get_resource: vmi_management_instance }
+        - port: { get_resource: physnet_1_vmi_@@ loop.index @@ }
+        - port: { get_resource: vmi_management_instance_@@ loop.index @@ }
       user_data_format: RAW
       config_drive: true
-      user_data:  { get_resource: cloud_init } 
+      user_data:  { get_resource: cloud_init }
+<% endfor %> 

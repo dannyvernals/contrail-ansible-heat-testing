@@ -6,8 +6,8 @@ resources:
     properties:
       is_public: true
       name: natp.xp.m1.small
-      ram: 4096
-      vcpus: 4
+      ram: 2048
+      vcpus: 2 
       disk: 10
 
 

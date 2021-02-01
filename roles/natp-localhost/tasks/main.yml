@@ -1,0 +1,28 @@
+---
+# tasks file for roles/natp-localhost
+- include_tasks: instantiate-natp-objects.yml
+  name: Include instantiate-natp-objects.yml
+  when:
+    local_mode == "instantiate"
+- include_tasks: instantiate-natp-vms.yml
+  name: Include instantiate-natp-vms.yml
+  when:
+    local_mode == "instantiate"
+- include_tasks: generate-inventory.yml
+  name: Include generate-inventory.yml
+  when:
+    local_mode == "instantiate"
+- include_tasks: test-api.yml
+  name: Include test-api.yml
+  when:
+    local_mode == "test_api"
+- include_tasks: teardown-vms.yml
+  name: Include teardown-vms.yml
+  when:
+    local_mode == "teardown"
+- include_tasks: teardown-objects.yml
+  name: Include teardown-objects.yml
+  when:
+    local_mode == "teardown"
+
+

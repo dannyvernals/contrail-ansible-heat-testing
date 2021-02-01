@@ -5,89 +5,77 @@
 #
 - name: "Delete the Stacks"
   hosts: localhost
+  environment: "{{ remote_env }}"
   tasks:
-    - name: "Load env"
-      shell: "python {{ script_dir }}/convert_rc_dict.py {{ rc_file }}"
-      register: env_vars
-    - set_fact: auth_dict="{{ env_vars.stdout | from_json}}"
     - name: "Delete Kernel VM"
       openstack.cloud.stack:
-        name: "NATP_Kernel_VM"
+        name: "NATP_Kernel_VM_{{ kern_idx }}"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
+      loop: "{{ kernel_nodes }}"
+      loop_control:
+        index_var: kern_idx
     - name: "Delete DPDK VM"
       openstack.cloud.stack:
-        name: "NATP_DPDK_VM"
+        name: "NATP_DPDK_VM_{{ dpdk_idx }}"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
+      loop: "{{ dpdk_nodes }}"
+      loop_control:
+        index_var: dpdk_idx
     - name: "Delete SRIOV VM"
       openstack.cloud.stack:
-        name: "NATP_SRIOV_VM"
+        name: "NATP_SRIOV_VM_{{ sriov_idx }}"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
+      loop: "{{ sriov_nodes }}"
+      loop_control:
+        index_var: sriov_idx
     - name: "Delete Kernel VN"
       openstack.cloud.stack:
         name: "NATP_Kernel_VN"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete DPDK VN"
       openstack.cloud.stack:
         name: "NATP_DPDK_VN"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete SRIOV VN"
       openstack.cloud.stack:
         name: "NATP_SRIOV_VN"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
+    - name: "Delete Management VN"
+      openstack.cloud.stack:
+        name: "NATP_Management_VN"
+        state: absent
+    - name: "Delete SRIOV Management VN"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_Management_VN"
+        state: absent
     - name: "Delete Network Policy"
       openstack.cloud.stack:
         name: "NATP_Network_Policy"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete Security Group"
       openstack.cloud.stack:
         name: "NATP_Security_Group"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete IPAM"
       openstack.cloud.stack:
         name: "NATP_IPAM"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete SRIOV IPAM"
       openstack.cloud.stack:
         name: "NATP_SRIOV_IPAM"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete Virtual DNS"
       openstack.cloud.stack:
         name: "NATP_Virtual_DNS"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete Flavor" 
       openstack.cloud.stack:
         name: "NATP_Flavor"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Delete Flavor DPDK"
       openstack.cloud.stack:
         name: "NATP_Flavor_DPDK"
         state: absent
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     #- name: "Delete Image"
     #ignore_errors: True
     #register: stack_create

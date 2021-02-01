@@ -1,0 +1,16 @@
+---
+- name: Refresh the Inventory
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Refresh inventory to load dynamic entries from instantiate-natp-stacks.yml
+      meta: refresh_inventory
+- name: Ping Test the VMs
+  hosts: VMS
+  gather_facts: no
+  vars:
+    results_dir: "{{ playbook_dir }}/output"
+    remote_mode: "ping"
+  roles:
+    - natp-remote
+

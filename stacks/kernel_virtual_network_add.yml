@@ -3,7 +3,9 @@ parameters:
   fq_string:
     type: string
     default: "admin_domain:admin"
-
+  sriov_leak_rt:
+    type: string
+    default: "target:65000:1001"
   vn_name: 
     type: string
     default: "natp-kernel-net"
@@ -32,7 +34,11 @@ resources:
   kernel_vn:
     type: OS::ContrailV2::VirtualNetwork
     properties:
-      name: { get_param: vn_name}    
+      name: { get_param: vn_name}
+      import_route_target_list:
+        import_route_target_list_route_target: [{get_param: sriov_leak_rt}]
+      export_route_target_list:
+        export_route_target_list_route_target: [{get_param: sriov_leak_rt}]
       network_ipam_refs: [{list_join: [':', [ {get_param: fq_string}, {get_param: vn_ipam}]]}]      
       network_ipam_refs_data:
         [{

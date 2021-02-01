@@ -16,19 +16,22 @@
   delegate_to: localhost
   xml:
     xmlstring: "{{ interface_xml.content }}"
-    xpath: "//mdata_ip_addr"
+    xpath: "//ItfSandeshData[vrf_name='{{ domain }}:{{ project }}:{{ management_net }}:{{ management_net }}']/mdata_ip_addr" 
     content: text
   register: xmlresp
-- name: Clear old SSH fingerprint
+- name: "Clear old SSH fingerprint (errors are fine to ignore here)"
   ignore_errors: True
   shell: "ssh-keygen -f {{ ssh_remote_dir }}/.ssh/known_hosts -R {{ xmlresp.matches[0].mdata_ip_addr }}"
 - name: "{{ vm.name }}: Ping vrouter" 
   shell: "ssh {{ xmlresp.matches[0].mdata_ip_addr }} -i {{ ssh_remote_dir }}/vm-key -oStrictHostKeyChecking=no 'ping -c 10 {{ vm.vrouter }} -i 0.2 -q'" 
   register: ping_results
-- local_action: "copy content={{ ping_results.stdout }} dest={{results_dir}}/{{ inventory_hostname }}_vrouter_{{ vm.name }}_ping"
-- name: "{{ vm.name }}: Ping other VM" 
-  shell: "ssh {{ xmlresp.matches[0].mdata_ip_addr }} -i {{ ssh_remote_dir }}/vm-key -oStrictHostKeyChecking=no 'ping -c 10 {{ vm.remote_ip }} -i 0.2 -q'"
+- name: "Save the ping results to disk (./output)"
+  local_action: "copy content={{ ping_results.stdout }} dest={{results_dir}}/{{ inventory_hostname }}_vrouter_{{ vm.name }}_ping.json"
+- name: "{{ vm.name }}: Ping other VMs" 
+  shell: "ssh {{ xmlresp.matches[0].mdata_ip_addr }} -i {{ ssh_remote_dir }}/vm-key -oStrictHostKeyChecking=no 'ping -c 10 {{ item }} -i 0.2 -q'"
   register: ping_results
-- local_action: copy content={{ ping_results.stdout }} dest="{{results_dir}}/{{ inventory_hostname }}_vm_{{ vm.name }}_ping"
+  loop: "{{ remote_ips }}"
+- name: "Save the ping results to disk  (./output)"
+  local_action: copy content={{ ping_results }} dest="{{results_dir}}/{{ inventory_hostname }}_vm_{{ vm.name }}_ping.json"
 
 

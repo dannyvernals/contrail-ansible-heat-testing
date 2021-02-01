@@ -1,0 +1,62 @@
+---
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/stack_module.html
+# Also needs to be using a python interpreter that has openstacksdk library
+#
+#
+    - name: "Initialize IP list"
+      set_fact:
+        contrail_vm_ips: []
+    - name: "Get Kernel VMs States"
+      openstack.cloud.server_info:
+        server: "natp-kernel-vn-vm-{{ kernel_idx + 1 }}"
+      register: kernel_vm_states
+      loop: "{{ kernel_nodes }}"
+      loop_control:
+        index_var: kernel_idx
+    - name: Post-Process for IPs
+      loop: "{{ kernel_vm_states.results }}"
+      no_log: true
+      set_fact:
+        contrail_vm_ips: "{{ contrail_vm_ips + [[
+          'kernel',
+          item.openstack_servers[0]['OS-EXT-SRV-ATTR:host'],
+          item.openstack_servers[0]['addresses']['natp-kernel-net'][0]['addr']
+          ]]}}"
+    - name: "Get DPDK VMs States"
+      openstack.cloud.server_info:
+        server: "natp-dpdk-vn-vm-{{ dpdk_idx + 1}}"
+      register:  dpdk_vm_states
+      loop: "{{ dpdk_nodes }}"
+      loop_control:
+        index_var: dpdk_idx
+    - name: Post-Process for IPs
+      loop: "{{ dpdk_vm_states.results }}"
+      no_log: true
+      set_fact:
+        contrail_vm_ips: "{{ contrail_vm_ips + [[
+          'dpdk',
+          item.openstack_servers[0]['OS-EXT-SRV-ATTR:host'], 
+          item.openstack_servers[0]['addresses']['natp-dpdk-net'][0]['addr']
+          ]]}}"
+    - name: "Get SRIOV VMs States"
+      openstack.cloud.server_info:
+        server: "natp-sriov-vn-vm-{{ sriov_idx + 1}}"
+      loop: "{{ sriov_nodes }}"
+      loop_control:
+        index_var: sriov_idx
+      register:  sriov_vm_states
+    - name: Post-Process for IPs
+      loop: "{{ sriov_vm_states.results }}"
+      no_log: true
+      set_fact:
+        contrail_vm_ips: "{{ contrail_vm_ips + [[
+          'sriov',
+          item.openstack_servers[0]['OS-EXT-SRV-ATTR:host'],
+          item.openstack_servers[0]['addresses']['natp-physnet_1_network'][0]['addr']
+          ]]}}"
+    - name: Generate VM test Inventory (metadata)
+      template:
+       src: vm-inventory-metadata.j2
+       dest: "{{ playbook_dir }}/renderings/vm-inventory.yml"
+

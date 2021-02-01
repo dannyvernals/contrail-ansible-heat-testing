@@ -1,0 +1,212 @@
+---
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/stack_module.html
+# Also needs to be using a python interpreter that has openstacksdk library
+#
+#
+- name: "Instantiate the Stacks"
+  hosts: localhost
+  vars:
+    stacks_dir: "{{ playbook_dir }}/stacks"
+  ## TODO: figure out a better way to pass env vars from local to 'remote' 
+  environment: "{{ remote_env }}"
+  tasks:
+    - name: "Create Flavor" 
+      openstack.cloud.stack:
+        name: "NATP_Flavor"
+        state: present
+        template: "{{ stacks_dir }}/add_flavor.yml"
+    - name: "Create Flavor DPDK"
+      openstack.cloud.stack:
+        name: "NATP_Flavor_DPDK"
+        state: present
+        template: "{{ stacks_dir }}/add_flavor_dpdk.yml"
+    #- name: "Create Image"
+    #ignore_errors: True
+    #register: stack_create
+    #openstack.cloud.stack:
+    #name: "NATP_Image"
+    #state: present
+    #template: "{{ stacks_dir }}/glance_add_image.yml"
+    #parameters:
+    #imglocation: "{{ glance_image_url }}"
+    - name: "Create Virtual DNS"
+      openstack.cloud.stack:
+        name: "NATP_Virtual_DNS"
+        state: present
+        template: "{{ stacks_dir }}/vdns.yml"
+        parameters:
+          vdns_domain: "{{ domain }}"
+    - name: "Create IPAM"
+      openstack.cloud.stack:
+        name: "NATP_IPAM"
+        state: present
+        template: "{{ stacks_dir }}/network_ipam_add.yml"
+        parameters:
+          fq_string: "{{ domain }}"
+    - name: "Create SRIOV IPAM"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_IPAM"
+        state: present
+        template: "{{ stacks_dir }}/network_ipam_add_sriov.yml"
+    - name: "Create Network Policy"
+      openstack.cloud.stack:
+        name: "NATP_Network_Policy"
+        state: present
+        template: "{{ stacks_dir }}/network-policy.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+          sriov_prefix:  "{{ sriov_ips[0] | ansible.netcommon.ipaddr('network')}}"
+          sriov_prefix_length:  "{{ sriov_ips[0]  | ansible.netcommon.ipaddr('prefix')}}"
+    - name: "Create Management VN"
+      openstack.cloud.stack:
+        name: "NATP_Management_VN"
+        state: present
+        template: "{{ stacks_dir }}/management_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}:"
+    - name: "Create SRIOV Management VN"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_Management_VN"
+        state: present
+        template: "{{ stacks_dir }}/management_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}:"
+          vn_name: "natp-management-sriov-net"
+    - name: "Create Kernel VN"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VN"
+        state: present
+        template: "{{ stacks_dir }}/kernel_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+          sriov_leak_rt: "{{ sriov_leak_rt }}"
+    - name: "Create DPDK VN"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VN"
+        state: present
+        template: "{{ stacks_dir }}/dpdk_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+          sriov_leak_rt: "{{ sriov_leak_rt }}"
+    - name: "Create Security Group"
+      openstack.cloud.stack:
+        name: "NATP_Security_Group"
+        state: present
+        template: "{{ stacks_dir }}/security_group_add.yml"
+    - name: "Create kernel VM"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VM_{{ kern_idx }}"
+        state: present
+        template: "{{ stacks_dir }}/kernel_vn_vm_1_add.yml"
+        parameters:
+          image_name: "{{ vm_image }}"
+          management_vn_name: "{{ management_net }}"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          az: "nova:{{ item }}"
+          fq_string: "{{ domain }}:{{ project }}"
+          vm_index: "{{ kern_idx }}"
+      loop: "{{ kernel_nodes }}"
+      loop_control:
+        index_var: kern_idx
+    - name: "Create DPDK VM"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VM_{{ dpdk_idx }}"
+        state: present
+        template: "{{ stacks_dir }}/dpdk_vn_vm_1_add.yml"
+        parameters:
+          image_name: "{{ vm_image }}"
+          az: "nova:{{ item }}"
+          management_vn_name: "{{ management_net }}"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+          vm_index: "{{ dpdk_idx }}"
+      loop: "{{ dpdk_nodes }}"
+      loop_control:
+        index_var: dpdk_idx
+    - name: "Create SRIOV VN"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VN"
+        state: present
+        template: "{{ stacks_dir }}/sriov_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+          vn_vlan:  "{{ sriov_vlan }}"
+          vn_prefix:  "{{ sriov_ips[0] | ansible.netcommon.ipaddr('network')}}"
+          vn_prefix_length:  "{{ sriov_ips[0]  | ansible.netcommon.ipaddr('prefix')}}"
+    - name: "Create SRIOV VM"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VM_{{ sriov_idx }}"
+        state: present
+        template: "{{ stacks_dir }}/sriov_vn_vm_1_add.yml"
+        parameters:
+          image_name: "{{ vm_image }}" 
+          az: "nova:{{ item }}"
+          management_vn_name: "natp-management-sriov-net"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+          vm_ip:  "{{ sriov_ips[sriov_idx] | ansible.netcommon.ipaddr('address')}}"
+          vm_index: "{{ sriov_idx }}"
+      loop: "{{ sriov_nodes }}"
+      loop_control:
+        index_var: sriov_idx
+    - name: "Initialize IP lists"
+      set_fact:
+        contrail_vm_ips: []
+        sriov_vm_ips: []
+    - name: "Get Kernel VM State"
+      openstack.cloud.server_info:
+        server: "natp-kernel-vn-vm-{{ kernel_idx }}"
+      register: kernel_vm_states
+      loop: "{{ kernel_nodes }}"
+      loop_control:
+        index_var: kernel_idx
+    - name: Post-Process for IPs
+      loop: "{{ kernel_vm_states.results }}"
+      no_log: true
+      set_fact:
+        contrail_vm_ips: "{{ contrail_vm_ips + [item.openstack_servers[0]['addresses']['natp-kernel-net'][0]['addr']]}}"
+    - name: "Get DPDK VM State"
+      openstack.cloud.server_info:
+        server: "natp-dpdk-vn-vm-{{ dpdk_idx }}"
+      register:  dpdk_vm_states
+      loop: "{{ dpdk_nodes }}"
+      loop_control:
+        index_var: dpdk_idx
+    - name: Post-Process for IPs
+      loop: "{{ dpdk_vm_states.results }}"
+      no_log: true
+      set_fact:
+        contrail_vm_ips: "{{ contrail_vm_ips + [item.openstack_servers[0]['addresses']['natp-dpdk-net'][0]['addr']]}}"
+    - name: "Get SRIOV VM States"
+      openstack.cloud.server_info:
+        server: "natp-sriov-vn-vm-{{ sriov_idx }}"
+      loop: "{{ sriov_nodes }}"
+      loop_control:
+        index_var: sriov_idx
+      register:  sriov_vm_states
+    - name: Post-Process for IPs
+      loop: "{{ sriov_vm_states.results }}"
+      no_log: true
+      set_fact:
+        contrail_vm_ips: "{{ contrail_vm_ips + [item.openstack_servers[0]['addresses']['natp-physnet_1_network'][0]['addr']]}}"
+    - name: create a rendering directory if its not present
+      run_once: true
+      file:
+        path: "{{ playbook_dir }}/renderings"
+        state: directory
+        #    - name: Generate VM test Inventory (direct)
+      #template:
+      #src: templates/vm-inventory-direct.j2
+      #dest: "{{ playbook_dir }}/renderings/vm-inventory-direct.yml"
+    - name: Generate VM test Inventory (metadata)
+      template:
+       src: templates/vm-inventory-metadata.j2
+       dest: "{{ playbook_dir }}/renderings/vm-inventory-metadata.yml"
+    - name: create an output directory if its not present
+      run_once: true
+      file:
+        path: "{{ playbook_dir }}/output" 
+        state: directory
+
+

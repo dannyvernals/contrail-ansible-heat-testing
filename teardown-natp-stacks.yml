@@ -1,0 +1,10 @@
+---
+- name: Teardown the HEAT Stacks
+  hosts: localhost
+  gather_facts: no
+  environment: "{{ remote_env }}"
+  vars:
+    results_dir: "{{ playbook_dir }}/output"
+    local_mode: "teardown"
+  roles:
+    - natp-localhost

@@ -1,0 +1,25 @@
+  tasks:
+    - name: List the VMs
+      shell: "{{ virsh_command }} list --all"
+      register: stopped
+    - name: Print virsh Output
+      debug:
+        msg: "{{ stopped.stdout_lines }}"
+    - name: Post Process Virsh Output
+      loop: "{{ stopped.stdout_lines }}"
+      loop_control: 
+        loop_var: line 
+      when: "'shut off' in line"
+      set_fact:
+        down_vms: "{{ down_vms + [ line.split()[1] ] }}"
+    - name: Start VMs
+      loop: "{{ down_vms }}"
+      loop_control: 
+        loop_var: vm_id
+      shell: "{{ virsh_command }} start {{ vm_id }}"
+    - name: List the VMs
+      shell: "{{ virsh_command }} list"
+      register: restarted
+    - name: Print virsh Output
+      debug:
+        msg: "{{ restarted.stdout_lines }}"

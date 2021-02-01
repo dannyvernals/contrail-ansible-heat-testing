@@ -7,10 +7,6 @@ parameters:
     type: string
     description: name for the VirtualDns
     default: "natp-test-vdns"
-  vdns_fq_name:
-    type: string
-    description: fq_name for the VirtualDns
-    default: "natp-test-vdns"
   vdns_display_name:
     type: string
     description: display_name for the VirtualDns
@@ -57,7 +53,7 @@ resources:
     type: OS::ContrailV2::VirtualDns
     properties:
       name: { get_param: vdns_name }
-      fq_name: { get_param: vdns_fq_name }
+      fq_name: {list_join: [':', [ {get_param: vdns_domain}, {get_param: vdns_name}]]}
       display_name: { get_param: vdns_display_name }
       virtual_DNS_data:
         {

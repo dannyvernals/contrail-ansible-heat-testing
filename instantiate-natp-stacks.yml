@@ -1,0 +1,12 @@
+---
+- name: Instantiate the Heat Stacks
+  hosts: localhost
+  gather_facts: no
+  environment: "{{ remote_env }}"
+  vars:
+    stacks_dir: "{{ playbook_dir }}/stacks"
+    local_mode: "instantiate"
+    config_hosts: "{{ sriov_nodes + dpdk_nodes + kernel_nodes }}"
+  roles:
+    - natp-localhost
+

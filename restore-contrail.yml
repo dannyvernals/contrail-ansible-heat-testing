@@ -1,0 +1,15 @@
+---
+- name: Refresh the Inventory
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Refresh inventory to load dynamic entries from instantiate-natp-stacks.yml
+      meta: refresh_inventory
+- name: Restore all the VMs on a server hosting Contrail 
+  hosts: CONTRAIL_HOST
+  gather_facts: no
+  vars:
+    remote_mode: "restore-contrail"
+  roles:
+    - natp-remote
+

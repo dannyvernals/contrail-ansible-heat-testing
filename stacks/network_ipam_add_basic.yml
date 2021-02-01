@@ -1,0 +1,7 @@
+heat_template_version: queens
+resources:
+  test_ipam:
+    type: OS::ContrailV2::NetworkIpam
+    properties:
+      name: natp-test-ipam
+        

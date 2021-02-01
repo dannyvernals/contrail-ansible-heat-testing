@@ -1,0 +1,32 @@
+all:
+  children:
+    LOCAL:
+      hosts:
+        localhost:
+    CONTRAIL_HOST:
+      hosts:
+        {{ contrail_server }}:
+    VMS:
+      vars:
+        remote_ips: 
+{% for ip in contrail_vm_ips %}
+          - {{ ip[2] }}
+{% endfor %}
+      hosts: 
+{% for node in config_hosts | unique %}
+        {{ node }}.{{ domain_suffix }}:
+          vms: 
+{% for vm in contrail_vm_ips %}
+{% if vm[0] == 'sriov' and vm[1] == node %}
+            - name: sriov_vm
+              vrouter: {{ sriov_ip_start | ipaddr('network/prefix') | nthhost(1)}}
+{% elif vm[0] == 'dpdk' and vm[1] == node %}
+            - name: dpdk_vm
+              vrouter: 10.10.1.1
+{% elif vm[0] == 'kernel' and vm[1] == node %}
+            - name: kernel_vm
+              vrouter: 10.10.0.1
+{% endif %}
+{% endfor %}
+{% endfor %}
+

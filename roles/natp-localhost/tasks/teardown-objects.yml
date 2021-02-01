@@ -1,0 +1,61 @@
+---
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/stack_module.html
+# Also needs to be using a python interpreter that has openstacksdk library
+#
+    - name: "Delete Kernel VN"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VN"
+        state: absent
+    - name: "Delete DPDK VN"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VN"
+        state: absent
+    - name: "Delete SRIOV VN"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VN"
+        state: absent
+    - name: "Delete Management VN"
+      openstack.cloud.stack:
+        name: "NATP_Management_VN"
+        state: absent
+    - name: "Delete SRIOV Management VN"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_Management_VN"
+        state: absent
+    - name: "Delete Network Policy"
+      openstack.cloud.stack:
+        name: "NATP_Network_Policy"
+        state: absent
+    - name: "Delete Security Group"
+      openstack.cloud.stack:
+        name: "NATP_Security_Group"
+        state: absent
+    - name: "Delete IPAM"
+      openstack.cloud.stack:
+        name: "NATP_IPAM"
+        state: absent
+    - name: "Delete SRIOV IPAM"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_IPAM"
+        state: absent
+    - name: "Delete Virtual DNS"
+      openstack.cloud.stack:
+        name: "NATP_Virtual_DNS"
+        state: absent
+    - name: "Delete Flavor" 
+      openstack.cloud.stack:
+        name: "NATP_Flavor"
+        state: absent
+    - name: "Delete Flavor DPDK"
+      openstack.cloud.stack:
+        name: "NATP_Flavor_DPDK"
+        state: absent
+    #- name: "Delete Image"
+    #ignore_errors: True
+    #register: stack_create
+    #openstack.cloud.stack:
+    #name: "NATP_Image"
+    #state: absent
+    #template: "{{ dir }}/glance_add_image.yml"
+

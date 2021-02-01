@@ -7,49 +7,15 @@
 - name: "Instantiate the Stacks"
   hosts: localhost
   vars:
-    stacks_dir: "{{ script_dir }}/stacks"
+    stacks_dir: "{{ playbook_dir }}/stacks"
+  ## TODO: figure out a better way to pass env vars from local to 'remote' 
+  environment: "{{ remote_env }}"
   tasks:
-    - name: "Load env"
-      shell: "python {{ script_dir }}/convert_rc_dict.py {{ rc_file }}"
-      register: env_vars
-    - set_fact: auth_dict="{{ env_vars.stdout | from_json}}"  
-    - name: "Create Flavor" 
-      openstack.cloud.stack:
-        name: "NATP_Flavor"
-        state: present
-        template: "{{ stacks_dir }}/add_flavor.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
-    - name: "Create Flavor DPDK"
-      openstack.cloud.stack:
-        name: "NATP_Flavor_DPDK"
-        state: present
-        template: "{{ stacks_dir }}/add_flavor_dpdk.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
-    #- name: "Create Image"
-    #ignore_errors: True
-    #register: stack_create
-    #openstack.cloud.stack:
-    #name: "NATP_Image"
-    #state: present
-    #template: "{{ stacks_dir }}/glance_add_image.yml"
-    #parameters:
-    #imglocation: "{{ glance_image_url }}"
-    - name: "Create Virtual DNS"
-      openstack.cloud.stack:
-        name: "NATP_Virtual_DNS"
-        state: present
-        template: "{{ stacks_dir }}/vdns.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create IPAM"
       openstack.cloud.stack:
         name: "NATP_IPAM"
         state: present
-        template: "{{ stacks_dir }}/network_ipam_add.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
+        template: "{{ stacks_dir }}/network_ipam_add_basic.yml"
     - name: "Create Network Policy"
       openstack.cloud.stack:
         name: "NATP_Network_Policy"
@@ -57,8 +23,6 @@
         template: "{{ stacks_dir }}/network-policy.yml"
         parameters:
           fq_string: "{{ domain }}:{{ project }}"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create Kernel VN"
       openstack.cloud.stack:
         name: "NATP_Kernel_VN"
@@ -66,8 +30,6 @@
         template: "{{ stacks_dir }}/kernel_virtual_network_add.yml"
         parameters:
           fq_string: "{{ domain }}:{{ project }}"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create DPDK VN"
       openstack.cloud.stack:
         name: "NATP_DPDK_VN"
@@ -75,24 +37,18 @@
         template: "{{ stacks_dir }}/dpdk_virtual_network_add.yml"
         parameters:
           fq_string: "{{ domain }}:{{ project }}"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create Security Group"
       openstack.cloud.stack:
         name: "NATP_Security_Group"
         state: present
         template: "{{ stacks_dir }}/security_group_add.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create kernel VM"
       openstack.cloud.stack:
         name: "NATP_Kernel_VM"
         state: present
         template: "{{ stacks_dir }}/kernel_vn_vm_1_add.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
         parameters:
-          image_name: Bionic_Ubuntu 
+          image_name: ubuntu_bionic 
           management_vn_name: "{{ management_net }}"
           ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
           az: "nova:{{ kernel_node }}"
@@ -102,10 +58,8 @@
         name: "NATP_DPDK_VM"
         state: present
         template: "{{ stacks_dir }}/dpdk_vn_vm_1_add.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
         parameters:
-          image_name: Bionic_Ubuntu
+          image_name: ubuntu_bionic
           az: "nova:{{ dpdk_node }}"
           management_vn_name: "{{ management_net }}"
           ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
@@ -115,8 +69,6 @@
         name: "NATP_SRIOV_IPAM"
         state: present
         template: "{{ stacks_dir }}/network_ipam_add_sriov.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create SRIOV VN"
       openstack.cloud.stack:
         name: "NATP_SRIOV_VN"
@@ -124,17 +76,13 @@
         template: "{{ stacks_dir }}/sriov_virtual_network_add.yml"
         parameters:
           fq_string: "{{ domain }}:{{ project }}"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
     - name: "Create SRIOV VM"
       openstack.cloud.stack:
         name: "NATP_SRIOV_VM"
         state: present
         template: "{{ stacks_dir }}/sriov_vn_vm_1_add.yml"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
         parameters:
-          image_name: Bionic_Ubuntu
+          image_name: ubuntu_bionic 
           az: "nova:{{ sriov_node }}"
           management_vn_name: "{{ management_net }}"
           ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
@@ -142,29 +90,23 @@
     - name: "Get Kernel VM State"
       openstack.cloud.server_info:
         server: "natp-kernel-vn-vm1"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
       register:  kernel_vm_state
     - name: "Get DPDK VM State"
       openstack.cloud.server_info:
         server: "natp-dpdk-vn-vm1"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
       register:  dpdk_vm_state
     - name: "Get SRIOV VM State"
       openstack.cloud.server_info:
         server: "natp-sriov-vn-vm1"
-        auth: "{{ auth_dict.auth_vars}}"
-        ca_cert: "{{ auth_dict.cacert}}"
       register:  sriov_vm_state
     - name: Generate VM test Inventory (direct)
       template: 
        src: templates/vm-inventory-direct.j2
-       dest: "{{ playbook_dir }}/vm-inventory-direct.yaml"
+       dest: "{{ playbook_dir }}/vm-inventory-direct.yml"
     - name: Generate VM test Inventory (metadata)
       template:
        src: templates/vm-inventory-metadata.j2
-       dest: "{{ playbook_dir }}/vm-inventory-metadata.yaml"
+       dest: "{{ playbook_dir }}/vm-inventory-metadata.yml"
 
 
 

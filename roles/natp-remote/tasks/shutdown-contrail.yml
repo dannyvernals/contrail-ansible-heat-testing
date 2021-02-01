@@ -1,0 +1,24 @@
+    - name: List the VMs
+      shell: "{{ virsh_command }} list"
+      register: vms
+    - name: Print virsh Output
+      debug:
+        msg: "{{ vms.stdout_lines }}"
+    - name: Post Process Virsh Output
+      loop: "{{ vms.stdout_lines }}"
+      loop_control: 
+        loop_var: line 
+      when: "'running' in line"
+      set_fact:
+        up_vms: "{{ up_vms + [ line.split()[1] ] }}"
+    - name: Stop VMs
+      loop: "{{ up_vms }}"
+      loop_control: 
+        loop_var: vm_id
+      shell: "{{ virsh_command }} destroy {{ vm_id }}"
+    - name: List the VMs
+      shell: "{{ virsh_command }} list --all"
+      register: stopped
+    - name: Print virsh Output
+      debug:
+        msg: "{{ stopped.stdout_lines }}"

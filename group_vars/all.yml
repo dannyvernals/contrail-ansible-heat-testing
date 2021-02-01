@@ -1,21 +1,26 @@
-# All
-ansible_python_interpreter: "/home/vernald2/git-clones/scratch3/venvs/portable/bin/python"
-script_dir: "/home/vernald2/git-clones/bt-repo/ansible-NATP"
-management_net: "natp-management-net"
-domain: "int"
-project: "ref_uat"
-domain_suffix: "002.ncitest.bt.com"
-dpdk_node: "b26nc01node013"
-kernel_node: "b26nc01node011"
-sriov_node: "b26nc01node010"
+## All playbooks
+ansible_python_interpreter: ""
+domain_suffix: ""
+# For now DPDK / Kernel / SRIOV VMs all need to be on separate compute nodes
+dpdk_nodes: [""]
+sriov_nodes: [""]
+kernel_nodes: [""]
+# use 998 for production
+sriov_vlan: "xxx"
+sriov_ip_start: "1.1.1.0/24"
+sriov_leak_rt: "target:x:x" 
 glance_image_url: ""
-rc_file: "~/fordanny/adstrc-int"
-# VM Testing
+# use below for failover testing
+contrail_server: "1.1.1.1"
+## VM Testing playbooks
 ssh_id_location: "vm-key.pub"
 ssh_private_key_location: "vm-key"
 ssh_remote_dir: "/home/ubuntu"
-introspect_cert: "/home/vernald2/git-clones/bt-repo/contrail-introspect-cli/certs/Jump002-Gemini.pem"
-introspect_key: "/home/vernald2/git-clones/bt-repo/contrail-introspect-cli/certs/Jump002-Gemini_no_pwd.key"
+introspect_cert: ""
+introspect_key: ""
+# These playbooks currently don't support uploading an image to Glance so we need to use one already deployed
+#vm_image: "ubuntu-bionic"
+vm_image: "Bionic_Ubuntu"   
 
-# API Testing
-api_url: "https://contrailapi.002.ncitest.bt.com:8082"
+## API Testing playbooks
+api_url: "https://contrail-api:8082"

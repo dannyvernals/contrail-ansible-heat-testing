@@ -6,11 +6,6 @@
 # This is dependent on openstack cloud module
 # https://docs.ansible.com/ansible/latest/collections/openstack/cloud/auth_module.html
 
-- name: "Test Contrail API"
-  hosts: localhost
-  vars:
-    results_dir: "{{ script_dir }}/output"
-  tasks:
     - name: Authenticate to OpenStack
       openstack.cloud.auth:
       register: os_auth_results
@@ -37,17 +32,22 @@
           X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
           Content-Type: "application/json; charset=UTF-8"
       register: vn_kernel_json
-    - local_action: copy content={{ vn_kernel_json.json }} dest="{{results_dir}}/vn_kernel"
-    - name: Get Kernel VM
+    - name: "Saving API reply to disk (./output)"  
+      local_action: copy content={{ vn_kernel_json.json }} dest="{{results_dir}}/vn_kernel.json"
+    - name: Get Kernel VMs
       uri:
-        url: "{{ vn_kernel_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][0][\"href\"] }}"
+        url: "{{ vn_kernel_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][kern_idx][\"href\"] }}"
         method: GET
         return_content: yes
         headers:
           X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
           Content-Type: "application/json; charset=UTF-8"
+      loop: "{{ kernel_nodes }}"
+      loop_control:
+        index_var: kern_idx
       register: vm_kernel_json
-    - local_action: copy content={{ vm_kernel_json.json }} dest="{{results_dir}}/vm_kernel"
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ vm_kernel_json }} dest="{{results_dir}}/vm_kernel.json"
     - name: Get DPDK VN UUID
       uri:
         url: "{{ api_url }}/fqname-to-id"
@@ -59,7 +59,7 @@
         body_format: json
         body: "{\"fq_name\": [\"{{ domain }}\", \"{{ project }}\", \"natp-dpdk-net\"], \"type\": \"virtual-network\"}"
       register: vn_dpdk_uuid
-    - name: Get Kernel VN
+    - name: Get DPDK VN
       uri:
         url: "{{ api_url }}/virtual-network/{{vn_dpdk_uuid.json.uuid}}"
         method: GET
@@ -68,17 +68,58 @@
           X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
           Content-Type: "application/json; charset=UTF-8"
       register: vn_dpdk_json
-    - local_action: copy content={{ vn_dpdk_json.json }} dest="{{results_dir}}/vn_dpdk"
-    - name: Get DPDK VM
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ vn_dpdk_json.json }} dest="{{results_dir}}/vn_dpdk.json"
+    - name: Get SRIOV VN UUID
       uri:
-        url: "{{ vn_dpdk_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][0][\"href\"] }}"
+        url: "{{ api_url }}/fqname-to-id"
+        method: POST
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+        body_format: json
+        body: "{\"fq_name\": [\"{{ domain }}\", \"{{ project }}\", \"natp-physnet_1_network\"], \"type\": \"virtual-network\"}"
+      register: vn_sriov_uuid
+    - name: Get SRIOV VN
+      uri:
+        url: "{{ api_url }}/virtual-network/{{vn_sriov_uuid.json.uuid}}"
         method: GET
         return_content: yes
         headers:
           X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
           Content-Type: "application/json; charset=UTF-8"
+      register: vn_sriov_json
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ vn_sriov_json.json }} dest="{{results_dir}}/vn_sriov.json"
+    - name: Get DPDK VMs
+      uri:
+        url: "{{ vn_dpdk_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][dpdk_idx][\"href\"] }}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      loop: "{{ dpdk_nodes }}"
+      loop_control:
+        index_var: dpdk_idx
       register: vm_dpdk_json
-    - local_action: copy content={{ vm_dpdk_json.json }} dest="{{results_dir}}/vm_dpdk"
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ vm_dpdk_json }} dest="{{results_dir}}/vm_dpdk.json"
+    - name: Get SRIOV VMs
+      uri:
+        url: "{{ vn_sriov_json.json[\"virtual-network\"][\"virtual_machine_interface_back_refs\"][sriov_idx][\"href\"] }}"
+        method: GET
+        return_content: yes
+        headers:
+          X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
+          Content-Type: "application/json; charset=UTF-8"
+      loop: "{{ sriov_nodes }}"
+      loop_control:
+        index_var: sriov_idx
+      register: vm_sriov_json
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ vm_sriov_json }} dest="{{results_dir}}/vm_sriov.json"
     - name: Get Network Policy UUID
       uri:
         url: "{{ api_url }}/fqname-to-id"
@@ -99,7 +140,8 @@
           X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
           Content-Type: "application/json; charset=UTF-8"
       register: network_policy_json
-    - local_action: copy content={{ network_policy_json.json }} dest="{{results_dir}}/network_policy"
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ network_policy_json.json }} dest="{{results_dir}}/network_policy.json"
     - name: Get Security Group UUID
       uri:
         url: "{{ api_url }}/fqname-to-id"
@@ -120,4 +162,5 @@
           X-Auth-Token: "{{ os_auth_results.ansible_facts.auth_token }}"
           Content-Type: "application/json; charset=UTF-8"
       register: security_group_json
-    - local_action: copy content={{ security_group_json.json }} dest="{{results_dir}}/security_group"
+    - name: "Saving API reply to disk (./output)"
+      local_action: copy content={{ security_group_json.json }} dest="{{results_dir}}/security_group.json"

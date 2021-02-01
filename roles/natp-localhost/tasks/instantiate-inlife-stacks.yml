@@ -1,0 +1,113 @@
+---
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/stack_module.html
+# Also needs to be using a python interpreter that has openstacksdk library
+#
+#
+- name: "Instantiate the Stacks"
+  hosts: localhost
+  vars:
+    stacks_dir: "{{ playbook_dir }}/stacks"
+  ## TODO: figure out a better way to pass env vars from local to 'remote' 
+  environment: "{{ remote_env }}"
+  tasks:
+    - name: "Create IPAM"
+      openstack.cloud.stack:
+        name: "NATP_IPAM"
+        state: present
+        template: "{{ stacks_dir }}/network_ipam_add_basic.yml"
+    - name: "Create Network Policy"
+      openstack.cloud.stack:
+        name: "NATP_Network_Policy"
+        state: present
+        template: "{{ stacks_dir }}/network-policy.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Create Kernel VN"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VN"
+        state: present
+        template: "{{ stacks_dir }}/kernel_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Create DPDK VN"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VN"
+        state: present
+        template: "{{ stacks_dir }}/dpdk_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Create Security Group"
+      openstack.cloud.stack:
+        name: "NATP_Security_Group"
+        state: present
+        template: "{{ stacks_dir }}/security_group_add.yml"
+    - name: "Create kernel VM"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VM"
+        state: present
+        template: "{{ stacks_dir }}/kernel_vn_vm_1_add.yml"
+        parameters:
+          image_name: ubuntu_bionic 
+          management_vn_name: "{{ management_net }}"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          az: "nova:{{ kernel_node }}"
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Create DPDK VM"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VM"
+        state: present
+        template: "{{ stacks_dir }}/dpdk_vn_vm_1_add.yml"
+        parameters:
+          image_name: ubuntu_bionic
+          az: "nova:{{ dpdk_node }}"
+          management_vn_name: "{{ management_net }}"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Create SRIOV IPAM"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_IPAM"
+        state: present
+        template: "{{ stacks_dir }}/network_ipam_add_sriov.yml"
+    - name: "Create SRIOV VN"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VN"
+        state: present
+        template: "{{ stacks_dir }}/sriov_virtual_network_add.yml"
+        parameters:
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Create SRIOV VM"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VM"
+        state: present
+        template: "{{ stacks_dir }}/sriov_vn_vm_1_add.yml"
+        parameters:
+          image_name: ubuntu_bionic 
+          az: "nova:{{ sriov_node }}"
+          management_vn_name: "{{ management_net }}"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Get Kernel VM State"
+      openstack.cloud.server_info:
+        server: "natp-kernel-vn-vm1"
+      register:  kernel_vm_state
+    - name: "Get DPDK VM State"
+      openstack.cloud.server_info:
+        server: "natp-dpdk-vn-vm1"
+      register:  dpdk_vm_state
+    - name: "Get SRIOV VM State"
+      openstack.cloud.server_info:
+        server: "natp-sriov-vn-vm1"
+      register:  sriov_vm_state
+    - name: Generate VM test Inventory (direct)
+      template: 
+       src: templates/vm-inventory-direct.j2
+       dest: "{{ playbook_dir }}/vm-inventory-direct.yml"
+    - name: Generate VM test Inventory (metadata)
+      template:
+       src: templates/vm-inventory-metadata.j2
+       dest: "{{ playbook_dir }}/vm-inventory-metadata.yml"
+
+
+
+

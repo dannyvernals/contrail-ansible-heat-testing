@@ -1,0 +1,49 @@
+---
+# This is dependent on openstack cloud module
+# https://docs.ansible.com/ansible/latest/collections/openstack/cloud/stack_module.html
+# Also needs to be using a python interpreter that has openstacksdk library
+#
+#
+    - name: "Generate HOT for Kernel VMs"
+      template:
+       src: "kernel_vm.j2"
+       dest: "{{ playbook_dir }}/renderings/kernel_vm_hot.yml"
+    - name: "Create kernel VMs using rendered HOT"
+      openstack.cloud.stack:
+        name: "NATP_Kernel_VMs"
+        state: present
+        template: "{{ playbook_dir }}/renderings/kernel_vm_hot.yml"
+        parameters:
+          image_name: "{{ vm_image }}"
+          management_vn_name: "natp-management-net"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Generate HOT for DPDK VMs"
+      template:
+       src: "dpdk_vm.j2"
+       dest: "{{ playbook_dir }}/renderings/dpdk_vm_hot.yml"
+    - name: "Create DPDK VMs using rendered HOT"
+      openstack.cloud.stack:
+        name: "NATP_DPDK_VMs"
+        state: present
+        template: "{{ playbook_dir }}/renderings/dpdk_vm_hot.yml"
+        parameters:
+          image_name: "{{ vm_image }}" 
+          management_vn_name: "natp-management-net"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+    - name: "Generate HOT for SRIOV VMs"
+      template:
+       src: "sriov_vm.j2"
+       dest: "{{ playbook_dir }}/renderings/sriov_vm_hot.yml"
+    - name: "Create SRIOV VMs using rendered HOT"
+      openstack.cloud.stack:
+        name: "NATP_SRIOV_VMs"
+        state: present
+        template: "{{ playbook_dir }}/renderings/sriov_vm_hot.yml" 
+        parameters:
+          image_name: "{{ vm_image }}" 
+          management_vn_name: "natp-management-sriov-net"
+          ssh_pub_key:  "{{ lookup('file', ssh_id_location) }}"
+          fq_string: "{{ domain }}:{{ project }}"
+

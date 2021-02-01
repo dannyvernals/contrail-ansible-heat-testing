@@ -1,0 +1,27 @@
+---
+    - name: "Load a separate playbook to ping from the SRIOV VMs"
+      vars:
+        management_net: "natp-management-sriov-net"
+      include_tasks: ./ping_includes.yml
+      loop: "{{ vms|flatten(levels=1)}}"
+      loop_control:
+        loop_var: vm
+      when: vm.name == "sriov_vm"
+    - name: "Load a separate playbook to ping from the DPDK VMs"
+      vars:
+        management_net: "natp-management-net"
+      include_tasks: ./ping_includes.yml
+      loop: "{{ vms|flatten(levels=1)}}"
+      loop_control:
+        loop_var: vm
+      when: vm.name == "dpdk_vm"
+    - name: "Load a separate playbook to ping from the kernel VMs"
+      vars:
+        management_net: "natp-management-net"
+      include_tasks: ./ping_includes.yml
+      loop: "{{ vms|flatten(levels=1)}}"
+      loop_control:
+        loop_var: vm
+      when: vm.name == "kernel_vm"
+
+
