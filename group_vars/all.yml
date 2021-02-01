@@ -2,9 +2,9 @@
 ansible_python_interpreter: ""
 domain_suffix: ""
 # For now DPDK / Kernel / SRIOV VMs all need to be on separate compute nodes
-dpdk_nodes: [""]
+dpdk_nodes: ["172.16.0.55"]
 sriov_nodes: [""]
-kernel_nodes: [""]
+kernel_nodes: ["172.16.0.55"]
 # use 998 for production
 sriov_vlan: "xxx"
 sriov_ip_start: "1.1.1.0/24"
@@ -23,4 +23,4 @@ introspect_key: ""
 vm_image: "Bionic_Ubuntu"   
 
 ## API Testing playbooks
-api_url: "https://contrail-api:8082"
+api_url: "https://172.16.0.100:8082"
