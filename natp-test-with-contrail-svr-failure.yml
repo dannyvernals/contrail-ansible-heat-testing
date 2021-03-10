@@ -1,0 +1,13 @@
+---
+- name: Load the Full Test Playbook (Run 1: Before Server Failure)
+  import_playbook: natp-full-test.yml
+- name: Load The Contrail Server Failure Test Playbook
+  import_playbook: shutdown-contrail.yml
+- name:  Load the Full Test Playbook (Run 2: During Server Failure)
+  import_playbook: natp-full-test.yml
+- name: Load Contrail Server Restore Playbook
+  import_playbook: restore-contrail.yml
+- name:  Load the Full Test Playbook (Run 3: After Server Failure)
+  import_playbook: natp-full-test.yml
+
+

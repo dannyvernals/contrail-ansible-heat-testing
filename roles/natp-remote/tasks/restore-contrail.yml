@@ -1,4 +1,3 @@
-  tasks:
     - name: List the VMs
       shell: "{{ virsh_command }} list --all"
       register: stopped
