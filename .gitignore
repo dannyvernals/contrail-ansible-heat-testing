@@ -1,3 +1,5 @@
 output
 temp.yml
 group_vars/all.yml
+vm-key
+vm-key.pub

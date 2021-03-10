@@ -95,7 +95,7 @@ A rough outline of these playbooks is as follows:
 * The exception being those used to launch VMs.  These are generated on the fly based on jinja2 templates.
 * The jinja2 templates for generating VM HOTs make use of non-standard delimiters (see the start of the templates). This is because standard jinja2 delimiters i.e. `{{ }}` and `{% %}` clash with json so the escaping needed would be a nightmare.
 * The ping test playbook connects to the relevant compute node hosting the VM (via dynamic inventory) and ping tests on the VM by connectivity to its' metadata IP address (obtained via introspect API).
-* Authentication to the VM is based on an SSH key contained within the repo.
+* Authentication to the VM is based on an SSH key contained within the repo.  Keys are included in the repo for convienience but of course you should generate your own.  They are only used to authenticate transient VMs typically within an isolated environment so don't require a very strict security posture.
 
 
 
