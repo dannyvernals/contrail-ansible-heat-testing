@@ -1,4 +1,4 @@
-# Contrail_Networking_Canonical_Openstack_Functionality_Test
+# Contrail Ansible + HEAT Testing
 
 This repo is inspired by:  
 https://github.com/kashif-nawaz/Contrail_Networking_Canonical_Openstack_Functionality_Test  
